@@ -12,63 +12,89 @@ fs.mkdir(projectDist, { recursive: true }, (err) => {
   if (err) throw err;
 });
 
-fs.copyFile(templateFile, pageFile, err => {
-  if (err) throw err;
+fs.stat(pageFile, (err) => {
+  if (!err) {
+    fs.rm(pageFile, { recursive: true }, (err) => {
+      if (err) throw err;
+      makePage();
+    });
+  } else {
+    makePage();
+  }
 });
 
-fs.readFile(templateFile, 'utf-8', (err, template) => {
-  if (err) throw err;
+function makePage() {
+  fs.copyFile(templateFile, pageFile, err => {
+    if (err) throw err;
+  });
 
-  fs.readdir(componentFiles, { withFileTypes: true }, (err, files) => {
+  fs.readFile(templateFile, 'utf-8', (err, template) => {
     if (err) throw err;
 
-    files.forEach(file => {
-      const componentPath = path.join(componentFiles, file.name);
-      const componentName = path.basename(file.name, '.html');
-      const componentTag = `{{${componentName}}}`;
+    fs.readdir(componentFiles, { withFileTypes: true }, (err, files) => {
+      if (err) throw err;
 
-      fs.readFile(componentPath, 'utf-8', (err, component) => {
-        if (err) throw err;
-        template = template.replace(componentTag, component);
+      files.forEach(file => {
+        const componentPath = path.join(componentFiles, file.name);
+        const componentName = path.basename(file.name, '.html');
+        const componentTag = `{{${componentName}}}`;
 
-        if (!template.includes(componentTag)) {
-          fs.writeFile(pageFile, template, (err) => {
-            if (err) throw err;
-          });
-        };
+        fs.readFile(componentPath, 'utf-8', (err, component) => {
+          if (err) throw err;
+          template = template.replaceAll(componentTag, component);
+
+          if (!template.includes(componentTag)) {
+            fs.writeFile(pageFile, template, (err) => {
+              if (err) throw err;
+            });
+          };
+        });
       });
     });
   });
-});
+}
 
 // copy assets files
 const assetsFiles = path.join('./06-build-page/assets');
 const copyAssetsFiles = path.join('./06-build-page/project-dist/assets');
 
-fs.mkdir(copyAssetsFiles, { recursive: true }, (err) => {
-  if (err) throw err;
+fs.stat(copyAssetsFiles, (err) => {
+  if (!err) {
+    fs.rm(copyAssetsFiles, { recursive: true }, (err) => {
+      if (err) throw err;
+      makeFolder();
+    });
+  } else {
+    makeFolder();
+  }
 });
 
-fs.readdir(assetsFiles, (err, files) => {
-  if (err) throw err;
-  files.forEach(folder => {
-    const mainFiles = path.join(`./06-build-page/assets/${folder}`);
-    const copyFiles = path.join(`./06-build-page/project-dist/assets/${folder}`);
+function makeFolder() {
+  fs.mkdir(copyAssetsFiles, { recursive: true }, (err) => {
+    if (err) throw err;
+  });
 
-    fs.mkdir(copyFiles, { recursive: true }, (err) => {
-      if (err) throw err;
-    });
+  fs.readdir(assetsFiles, (err, files) => {
+    if (err) throw err;
+    files.forEach(folder => {
+      const mainFiles = path.join(`./06-build-page/assets/${folder}`);
+      const copyFiles = path.join(`./06-build-page/project-dist/assets/${folder}`);
 
-    fs.readdir(mainFiles, (err, files) => {
-      if (err) throw err;
-      files.forEach(el => {
-        fs.copyFile(`${mainFiles}/${el}`, `${copyFiles}/${el}`, err => {
-          if (err) throw err;
+      fs.mkdir(copyFiles, { recursive: true }, (err) => {
+        if (err) throw err;
+      });
+
+      fs.readdir(mainFiles, (err, files) => {
+        if (err) throw err;
+        files.forEach(el => {
+          fs.copyFile(`${mainFiles}/${el}`, `${copyFiles}/${el}`, err => {
+            if (err) throw err;
+          });
         });
       });
     });
   });
-});
+}
 
 // compile styles
 const styleFiles = path.join('./06-build-page/styles');
